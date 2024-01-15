@@ -195,30 +195,32 @@ class WindowClass(QMainWindow, form_class) :
         inputText = self.inputText.toPlainText()
         self.label
         if len(inputText) > 0:
-            # self.show_popup_ok("test", "test1")
-            # self.t1 = indexThread(inputText)
-            # self.t1.start()
-            # self.t1.join()
-            # textResult = self.t1.get_result()
-            # self.list.setPlainText(textResult)
-            # self.label.setText(str(len(textResult)))
+            if len(self.list.toPlainText()) > 0:
+                self.show_popup("MakeBlog", "작성된 내용이 있습니다.\n재 검색 하시겠습니까?", inputText)
+            else:
+                self.worker = Worker(inputText)
+                self.worker.start()
+                self.worker.timeout.connect(self.timeout)
+                self.pBar.show()
+
+    def show_popup(self, title: str, content: str, inputText: str):
+
+        self.msg = QMessageBox()
+        self.msg.setIcon(QMessageBox.Information)
+        self.msg.setWindowTitle(title)
+        self.msg.setText(content)
+        self.msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        result = self.msg.exec_()
+        if result == QMessageBox.Ok:
+            self.list.setPlainText("")
             self.worker = Worker(inputText)
             self.worker.start()
             self.worker.timeout.connect(self.timeout)
             self.pBar.show()
-            # while self.worker.isRunning():
-            #     print(self.worker.isRunning())
-            #     if self.worker.isRunning() == False:
-            #         print(self.worker.isRunning())
-            #         break
-            #     time.sleep(0.5)
-            #
-            # textResult = self.worker.get_result()
-            # self.list.setPlainText(textResult)
-            # self.label.setText(str(len(textResult)))
-    def setBoard(self, result):
-        self.list.setPlainText(result)
-        self.label.setText(str(len(result)))
+        elif result == QMessageBox.Cancel:
+            print("cancel")
+
 
     @pyqtSlot(str)
     def timeout(self, num):
