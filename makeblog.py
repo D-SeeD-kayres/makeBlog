@@ -2,6 +2,9 @@ import os
 import openai
 import sys
 import uuid
+import requests
+from bs4 import BeautifulSoup
+
 import getmac
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
@@ -100,8 +103,6 @@ class LoginClass(QMainWindow, form_login):
         self.btnLogin.clicked.connect(self.loginFunction)
         self.btnSignup.clicked.connect(self.signupFunction)
         a = getmac.get_mac_address()
-        print(a)
-
 
     def signupFunction(self):
         self.signup = SignupClass()
@@ -169,25 +170,39 @@ class WindowClass(QMainWindow, form_class) :
         self.setupUi(self)
         self.btn.clicked.connect(self.button1Function)
         self.copybtn.clicked.connect(self.buttonCopyAction)
+        self.btnBlog.clicked.connect(self.buttonBlogAction)
         self.pBar.hide()
 
-
+    def buttonBlogAction(self):
+        textUrl = self.textLink.text()
+        if len(textUrl) > 0:
+            if "https://blog.naver.com" in textUrl:
+                url = textUrl
+                response = requests.get(url)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                ifra = soup.find('iframe', id='mainFrame')
+                post_url = 'https://blog.naver.com' + ifra['src']
+                res = requests.get(post_url)
+                soup2 = BeautifulSoup(res.text, 'html.parser')
+                print(post_url)
+                contents = ''
+                txt_contents = soup2.findAll('div', {'class': re.compile('^se-module se-module-tex.*')})
+                for p_span in txt_contents:
+                    for txt in p_span.find_all('span'):
+                        print(txt.get_text() + '\n')
+                        contents += txt.get_text() + '\n'
+                self.list.setPlainText(contents)
+            else:
+                self.show_popup_ok("ERROR", "네이버 블로그만 지원합니다.")
     def buttonCopyAction(self):
         clipboard.copy(self.list.toPlainText())
 
     def show_popup_ok(self, title: str, content: str):
 
         self.msg = QMessageBox()
-        self.msg.setWindowTitle("test")
+        self.msg.setWindowTitle(title)
         self.msg.setText(content)
         self.msg.setStandardButtons(QMessageBox.Ok)
-        bar = QProgressBar(self)
-        bar.setGeometry(0, 0, 200, 30)
-        bar.setValue(0)
-        bar.setMaximum(0)
-        lay = self.msg.layout()
-        lay.addWidget(bar)
-
         # bar.show()
         result = self.msg.exec_()
     def button1Function(self):
