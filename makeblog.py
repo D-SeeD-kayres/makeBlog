@@ -133,6 +133,7 @@ class LoginClass(QMainWindow, form_login):
                     date = now.strftime('%Y-%m-%d %H:%M:%S')
                     ref.update({'logindate':date})
                     self.main = WindowClass()
+
                     self.close()
                     self.main.show()
                 else:
