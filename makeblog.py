@@ -213,7 +213,26 @@ class WindowClass(QMainWindow, form_class) :
             if len(self.list.toPlainText()) > 0:
                 self.show_popup("MakeBlog", "작성된 내용이 있습니다.\n재 검색 하시겠습니까?", inputText)
             else:
-                self.worker = Worker(inputText)
+                age = ''
+                if self.ageRadio1.isChecked:
+                    age = '20대를 '
+                elif self.ageRadio2.isChecked:
+                    age = '30대를 '
+                elif self.ageRadio3.isChecked:
+                    age = '40대를 '
+                else:
+                    age = '모든 연령을'
+
+                job = ''
+                if self.jobRadio1.isChecked:
+                    job = '전문가처럼 '
+                elif self.jobRadio2.isChecked:
+                    job = '리뷰어처럼 '
+                elif self.jobRadio3.isChecked:
+                    job = '마케터처럼 '
+                else:
+                    job = '블로거처럼'
+                self.worker = Worker(inputText,age, job)
                 self.worker.start()
                 self.worker.timeout.connect(self.timeout)
                 self.pBar.show()
@@ -228,6 +247,25 @@ class WindowClass(QMainWindow, form_class) :
 
         result = self.msg.exec_()
         if result == QMessageBox.Ok:
+            age = ''
+            if self.ageRadio1.isChecked:
+                age = '20대를 '
+            elif self.ageRadio2.isChecked:
+                age = '30대를 '
+            elif self.ageRadio3.isChecked:
+                age = '40대를 '
+            else:
+                age = '모든 연령을'
+
+            job = ''
+            if self.jobRadio1.isChecked:
+                job = '전문가처럼 '
+            elif self.jobRadio2.isChecked:
+                job = '리뷰어처럼 '
+            elif self.jobRadio3.isChecked:
+                job = '마케터처럼 '
+            else:
+                job = '블로거처럼'
             self.list.setPlainText("")
             self.worker = Worker(inputText)
             self.worker.start()
@@ -245,11 +283,13 @@ class WindowClass(QMainWindow, form_class) :
         # self.edit.setText(str(num))
 class Worker(QThread):
     timeout = pyqtSignal(str)
-    def __init__(self, arg1):
+    def __init__(self, arg1, age, job):
         super().__init__()
         self.running = True
         self.result = None
         self.arg1 = arg1
+        self.age = age
+        self.job = job
     def run(self):
         while self.running:
             print(self.arg1)
@@ -266,7 +306,7 @@ class Worker(QThread):
             # self.result = self.indexResult
             for i in self.arrResult:
                 print(i)
-                for_input = self.arg1 + i + ("을 전문가 의견으로 작성해서 네이버 블로그 스타일로 소개문구는 빼고 써줘.")
+                for_input = self.arg1 + i + ("을 "+self.age+"대상으로 "+self.job+" 작성해서 네이버 블로그 스타일로 소개문구는 빼고 써줘.")
                 completion1 = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
                     messages=[
