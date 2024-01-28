@@ -4,6 +4,7 @@ import sys
 import uuid
 import requests
 from bs4 import BeautifulSoup
+import googletrans
 
 import getmac
 from PyQt5.QtWidgets import *
@@ -33,6 +34,8 @@ firebase_admin.initialize_app(cred,{
 form_class = uic.loadUiType("1.ui")[0]
 form_login = uic.loadUiType("login.ui")[0]
 form_signup = uic.loadUiType("signup.ui")[0]
+translator = googletrans.Translator()
+
 
 class SignupClass(QMainWindow, form_signup):
     def __init__(self):
@@ -165,12 +168,48 @@ class LoginClass(QMainWindow, form_login):
 class WindowClass(QMainWindow, form_class) :
     def __init__(self) :
         super().__init__()
-        OPENAI_YOUR_KEY = "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"
+        OPENAI_YOUR_KEY = "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"
         openai.api_key = OPENAI_YOUR_KEY
         self.setupUi(self)
         self.btn.clicked.connect(self.button1Function)
         self.copybtn.clicked.connect(self.buttonCopyAction)
         self.btnBlog.clicked.connect(self.buttonBlogAction)
+
+        self.ageCombo.addItem('타깃 연령 선택')
+        self.ageCombo.addItem('전연령')
+        self.ageCombo.addItem('20대')
+        self.ageCombo.addItem('30대')
+        self.ageCombo.addItem('40대')
+
+        self.jobCombo.addItem('직업선택')
+        self.jobCombo.addItem('전문가')
+        self.jobCombo.addItem('리뷰어')
+        self.jobCombo.addItem('마케터')
+        self.jobCombo.addItem('블로거')
+
+        # self.jobRadio0.clicked.connect(self.jobSelect)
+        # self.jobRadio1.clicked.connect(self.jobSelect)
+        # self.boxlayout1 = QBoxLayout(QBoxLayout.LeftToRight, parent=self)
+        # self.boxlayout1.addWidget(self.ageRadio0)
+        # self.boxlayout1.addWidget(self.ageRadio1)
+        # self.boxlayout1.addWidget(self.ageRadio2)
+        # self.boxlayout1.addWidget(self.ageRadio3)
+        #
+        # self.boxlayout2 = QBoxLayout(QBoxLayout.LeftToRight, parent=self)
+        # self.boxlayout2.addWidget(self.jobRadio0)
+        # self.boxlayout2.addWidget(self.jobRadio1)
+        # self.boxlayout2.addWidget(self.jobRadio2)
+        # self.boxlayout2.addWidget(self.jobRadio3)
+        #
+        # self.groupbox1 = QGroupBox(self)
+        # self.groupbox1.setLayout(self.boxlayout1)
+        # self.groupbox1.setGeometry(250, 0, 320, 40)
+        #
+        # self.groupbox2 = QGroupBox(self)
+        # self.groupbox2.setLayout(self.boxlayout2)
+        # self.groupbox2.setGeometry(250, 50, 320, 40)
+
+
         self.pBar.hide()
 
     def buttonBlogAction(self):
@@ -184,12 +223,10 @@ class WindowClass(QMainWindow, form_class) :
                 post_url = 'https://blog.naver.com' + ifra['src']
                 res = requests.get(post_url)
                 soup2 = BeautifulSoup(res.text, 'html.parser')
-                print(post_url)
                 contents = ''
                 txt_contents = soup2.findAll('div', {'class': re.compile('^se-module se-module-tex.*')})
                 for p_span in txt_contents:
                     for txt in p_span.find_all('span'):
-                        print(txt.get_text() + '\n')
                         contents += txt.get_text() + '\n'
                 self.list.setPlainText(contents)
             else:
@@ -214,28 +251,33 @@ class WindowClass(QMainWindow, form_class) :
                 self.show_popup("MakeBlog", "작성된 내용이 있습니다.\n재 검색 하시겠습니까?", inputText)
             else:
                 age = ''
-                if self.ageRadio1.isChecked:
-                    age = '20대를 '
-                elif self.ageRadio2.isChecked:
-                    age = '30대를 '
-                elif self.ageRadio3.isChecked:
-                    age = '40대를 '
-                else:
-                    age = '모든 연령을'
-
                 job = ''
-                if self.jobRadio1.isChecked:
-                    job = '전문가처럼 '
-                elif self.jobRadio2.isChecked:
-                    job = '리뷰어처럼 '
-                elif self.jobRadio3.isChecked:
-                    job = '마케터처럼 '
+                print(self.ageCombo.currentIndex())
+                if self.ageCombo.currentIndex() == 0 or self.jobCombo.currentIndex() == 0:
+                    self.show_popup_ok('error','필수 정보를 선택해 주세요.')
                 else:
-                    job = '블로거처럼'
-                self.worker = Worker(inputText,age, job)
-                self.worker.start()
-                self.worker.timeout.connect(self.timeout)
-                self.pBar.show()
+                    if self.ageCombo.currentIndex() == 1:
+                        age = '전연령'
+                    elif self.ageCombo.currentIndex() == 2:
+                        age = '20대'
+                    elif self.ageCombo.currentIndex() == 3:
+                        age = '30대'
+                    elif self.ageCombo.currentIndex() == 4:
+                        age = '40대'
+
+                    if self.jobCombo.currentIndex() == 1:
+                        job = '전문가'
+                    elif self.jobCombo.currentIndex() == 2:
+                        job = '리뷰어'
+                    elif self.jobCombo.currentIndex() == 3:
+                        job = '마케터'
+                    elif self.jobCombo.currentIndex() == 4:
+                        job = '블로거'
+
+                    self.worker = Worker(inputText,age, job)
+                    self.worker.start()
+                    self.worker.timeout.connect(self.timeout)
+                    self.pBar.show()
 
     def show_popup(self, title: str, content: str, inputText: str):
 
@@ -248,29 +290,32 @@ class WindowClass(QMainWindow, form_class) :
         result = self.msg.exec_()
         if result == QMessageBox.Ok:
             age = ''
-            if self.ageRadio1.isChecked:
-                age = '20대를 '
-            elif self.ageRadio2.isChecked:
-                age = '30대를 '
-            elif self.ageRadio3.isChecked:
-                age = '40대를 '
-            else:
-                age = '모든 연령을'
-
             job = ''
-            if self.jobRadio1.isChecked:
-                job = '전문가처럼 '
-            elif self.jobRadio2.isChecked:
-                job = '리뷰어처럼 '
-            elif self.jobRadio3.isChecked:
-                job = '마케터처럼 '
+            if self.ageCombo.currentIndex() == 0 or self.jobCombo.currentIndex() == 0:
+                self.show_popup_ok('error','필수 정보를 선택해 주세요.')
             else:
-                job = '블로거처럼'
-            self.list.setPlainText("")
-            self.worker = Worker(inputText)
-            self.worker.start()
-            self.worker.timeout.connect(self.timeout)
-            self.pBar.show()
+                if self.ageCombo.currentIndex() == 1:
+                    age = '전연령'
+                elif self.ageCombo.currentIndex() == 2:
+                    age = '20대'
+                elif self.ageCombo.currentIndex() == 3:
+                    age = '30대'
+                elif self.ageCombo.currentIndex() == 4:
+                    age = '40대'
+
+                if self.jobCombo.currentIndex() == 1:
+                    job = '전문가'
+                elif self.jobCombo.currentIndex() == 2:
+                    job = '리뷰어'
+                elif self.jobCombo.currentIndex() == 3:
+                    job = '마케터'
+                elif self.jobCombo.currentIndex() == 4:
+                    job = '블로거'
+
+                self.worker = Worker(inputText, age, job)
+                self.worker.start()
+                self.worker.timeout.connect(self.timeout)
+                self.pBar.show()
         elif result == QMessageBox.Cancel:
             print("cancel")
 
@@ -290,10 +335,15 @@ class Worker(QThread):
         self.arg1 = arg1
         self.age = age
         self.job = job
+        print(job)
     def run(self):
         while self.running:
-            print(self.arg1)
-            qq = self.arg1 + ("의 내용으로 블로그 포스팅할 내용의 목차 작성해줘.")
+
+            qq = "너는 "+self.arg1+"의 "+self.job+"야."+self.arg1 + ("을(를) 주제로 네이버블로그에 포스팅건대 부제목 6개 만들어줘")
+            print("111111")
+            print(qq)
+            # result =translator.translate(qq, src='ko', dest='en')
+
             completion = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
@@ -303,16 +353,24 @@ class Worker(QThread):
 
             self.arrResult = self.indexResult.splitlines()
             self.result = ""
+
             # self.result = self.indexResult
             for i in self.arrResult:
                 print(i)
-                for_input = self.arg1 + i + ("을 "+self.age+"대상으로 "+self.job+" 작성해서 네이버 블로그 스타일로 소개문구는 빼고 써줘.")
-                completion1 = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "user", "content": for_input}
-                    ])
-                self.result = self.result + i + "\n" + completion1.choices[0].message.content + "\n\n"
+                if len(i) > 0:
+
+                    for_input = "너를 "+self.job+"라고 가정하고, "+i + ("을 "+self.age+" 대상으로 소개하는 글을 써줘. 글 스타일은 네이버 블로그 스타일로 해주고 인사말은 빼줘. 말투는 친절하게 작성하는대 gpt를 사용한다는 글은 작성하지 말아줘.")
+                    # en_input = translator.translate(for_input, src='ko', dest='en').text
+
+                    completion1 = openai.ChatCompletion.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "user", "content": for_input}
+                        ])
+                    ko_result = completion1.choices[0].message.content
+                    # print(ja_result)
+                    # ko_result = translator.translate(ko_result, src='ja', dest='ko').text
+                    self.result = self.result + i + "\n" + ko_result+ "\n\n"
 
             # self.result1 = self.result + (" 이 내용을 네이버 블로그 스타일로 바꿔줘")
             # completion2 = openai.ChatCompletion.create(
@@ -373,8 +431,8 @@ if __name__ == "__main__" :
     myWindow = WindowClass()
     loginWindow = LoginClass()
     #프로그램 화면을 보여주는 코드
-    # myWindow.show()
-    loginWindow.show()
+    myWindow.show()
+    # loginWindow.show()
     #프로그램을 이벤트루프로 진입시키는(프로그램을 작동시키는) 코드
     app.exec_()
 
